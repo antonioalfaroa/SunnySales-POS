@@ -9,12 +9,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export default function App() {
   return (
-    <SafeAreaView className="bg-gray-300 h-full">
+    <SafeAreaView styles={styles.container}>
       <ScrollView contentContainerStyle={{height:"100%"}}>
-        <LinearGradient
-          colors={['rgba(92, 25, 76, 1.5)', 'rgba(255, 106, 0, 0.5)']} // Set your desired gradient colors
-          style={{ flex: 1 }}
-        >
           <View className="w-full justify-center items-center h-full px-4" style={styles.container}>
             <Image
               source={icons.sunny}
@@ -22,7 +18,7 @@ export default function App() {
               style={styles.logo}
               
             />
-            <Text className="text-center text-2xl mt-[20px]">
+            <Text style={styles.title}>
               Control your sales with {'\n'} 
               SunnySales
             </Text>
@@ -32,7 +28,6 @@ export default function App() {
               containerStyles="w-full mt-5"
             />
           </View>
-        </LinearGradient>
       </ScrollView>
       <StatusBar backgroundColor="#161622"
       style='light'/>
@@ -41,11 +36,19 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  container:{
+    flex:1,
+  },
   logo:{
-    top: -50,
+    top: - 50,
+    width: 150,
+    height: 150,
   },
-
-  container: {
-    
-  },
+  title:{
+    display:'flex',
+    top: -40,
+    textAlign:'center',
+    fontSize:35,
+    fontWeight:'600',
+  }
 })

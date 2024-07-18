@@ -2,16 +2,17 @@ import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-const settings = () => {
+const Settings = () => {
   return (
     <SafeAreaView>
       <View>
         <Text>Settings</Text>
+        
       </View>
     </SafeAreaView>
   )
 }
 
-export default settings
+export default Settings
 
 const styles = StyleSheet.create({})

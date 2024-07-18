@@ -1,58 +1,95 @@
 import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import CustomButton from '../components/CustomButton'
 import { Link, Router, router } from 'expo-router';
-import RedirectButton from '../components/RedirectButton';
-import { LinearGradient } from 'expo-linear-gradient';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Items from './Items'
+import Order from './Order'
+import Reports from './Reports';
+import Settings from './Settings'
+import Cart from './Cart';
+import { Ionicons } from '@expo/vector-icons';
+import Categories from './Categories';
+
+const Tab = createBottomTabNavigator();
 
 const profile = () => {
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <LinearGradient
-          colors={['rgba(92, 25, 76, 1.5)', 'rgba(255, 106, 0, 0.5)']} // Set your desired gradient colors
-          style={{ flex: 1 }}
-      >
-        <View style={styles.container}>
-          <View style={styles.separators}>
-            <RedirectButton
-              title={"Order"}
-              handlePress={() => router.push('/menu')}
+    <Tab.Navigator screenOptions={{
+       tabBarActiveTintColor:'orange',
+       }}>
+      <Tab.Screen name='Home' component={Items} 
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={size}
+              color={color}
             />
-            <RedirectButton
-              title={"Categories"}
-              handlePress={() => router.push('/categories')}
+          ),
+        }}
+      />
+      <Tab.Screen name='Order' component={Order}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'list' : 'list-outline'}
+              size={size}
+              color={color}
             />
-          </View>
-          <View style={styles.separators}>
-            <RedirectButton
-              title={"Items"}
-              handlePress={() => router.push('/items')}
+          ),
+        }}
+      />
+      <Tab.Screen name='Cart' component={Cart}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'cart' : 'cart-outline'}
+              size={size}
+              color={color}
             />
-            <RedirectButton
-              title={"Settings"}
-              handlePress={() => router.push('/settings')}
+          ),
+        }}
+      />
+      <Tab.Screen name='Reports' component={Reports}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              size={size}
+              color={color}
             />
-          </View>
-        </View>
-      </LinearGradient>
-
-    </SafeAreaView>
-    
+          ),
+        }}
+      />
+      <Tab.Screen name='Categories' component={Categories}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen name='Settings' component={Settings}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+    </Tab.Navigator>
   )
 }
 
 export default profile
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  separators:{
-    flexDirection:'row',
-    margin: 20,
-  }
-
+  
 })

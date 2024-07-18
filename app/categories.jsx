@@ -1,18 +1,42 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
 
 const Categories = () => {
   return (
-    <SafeAreaView>
-      <View>
-        <Text>Categories</Text>
-      </View>
-    </SafeAreaView>
-    
-  )
-}
+    <View style={styles.container}>
+      <Text style={styles.title}>Categories</Text>
+      <Link href="/CreateSections">
+        <Text style={styles.link}>Create Category</Text>
+      </Link>
+      <Link href="/ItemsCreate" asChild>
+        <Text style={styles.link}>Create Item</Text>
+      </Link>
+      <Link href="/EditCategories" asChild>
+        <Text style={styles.link}>Edit Categories</Text>
+      </Link>
+      <Link href="/EditItems" asChild>
+        <Text style={styles.link}>Edit Items</Text>
+      </Link>
+    </View>
+  );
+};
 
-export default Categories
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  link: {
+    fontSize: 18,
+    color: 'blue',
+    marginVertical: 10,
+  },
+});
 
-const styles = StyleSheet.create({})
+export default Categories;
