@@ -44,8 +44,9 @@ const Order = () => {
 
   const renderSaleItem = ({ item }) => (
     <TouchableOpacity style={styles.saleItem} onPress={() => navigateToSaleDetails(item)}>
-      <Text>{item.saleNumber}</Text>
+      <Text>Sale: {item.saleNumber}</Text>
       <Text>Date: {item.date}</Text>
+      <Text>Time: {item.time}</Text>
       <Text>Total: ${item.total.toFixed(2)}</Text>
     </TouchableOpacity>
   );

@@ -78,9 +78,31 @@ const WeeklySalesScreen = () => {
         return;
       }
   
+      // Calculate the total sum of all sales
+      const totalSum = salesData.reduce((acc, sale) => acc + sale.total, 0);
+  
+      // Calculate totals for cash and card
+      const totalCash = salesData
+        .filter(sale => sale.paymentMethod.toLowerCase() === 'cash')
+        .reduce((acc, sale) => acc + sale.total, 0);
+  
+      const totalCard = salesData
+        .filter(sale => sale.paymentMethod.toLowerCase() === 'card')
+        .reduce((acc, sale) => acc + sale.total, 0);
+  
       // Prepare PDF content
       const pdfContent = `
         <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              h1 { text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .total-row { font-weight: bold; }
+            </style>
+          </head>
           <body>
             <h1>Weekly Sales Report</h1>
             <p>Date Range: ${startDate.toLocaleDateString('en-CA')} to ${endDate.toLocaleDateString('en-CA')}</p>
@@ -88,6 +110,7 @@ const WeeklySalesScreen = () => {
               <tr>
                 <th>Sale number</th>
                 <th>Date</th>
+                <th>Time</th>
                 <th>Payment method</th>
                 <th>Total</th>
               </tr>
@@ -95,10 +118,23 @@ const WeeklySalesScreen = () => {
                 <tr>
                   <td>${sale.saleNumber}</td>
                   <td>${sale.date}</td>
+                  <td>${sale.time}</td>
                   <td>${sale.paymentMethod}</td>
                   <td>$${sale.total.toFixed(2)}</td>
                 </tr>
               `).join('')}
+              <tr class="total-row">
+                <td colspan="4">Total Sum:</td>
+                <td>$${totalSum.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="4">Total in Cash:</td>
+                <td>$${totalCash.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="4">Total in Card:</td>
+                <td>$${totalCard.toFixed(2)}</td>
+              </tr>
             </table>
           </body>
         </html>
@@ -106,7 +142,7 @@ const WeeklySalesScreen = () => {
   
       // Generate PDF using expo-print
       const { uri } = await Print.printToFileAsync({ html: pdfContent });
-
+  
       // Move the file to a writable directory on iOS
       const pdfPath = FileSystem.documentDirectory + 'weekly_sales_report.pdf';
       await FileSystem.moveAsync({
@@ -127,6 +163,7 @@ const WeeklySalesScreen = () => {
       console.error('Error generating PDF report:', error);
     }
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -177,6 +214,7 @@ const WeeklySalesScreen = () => {
                 <View style={styles.saleItem}>
                   <Text>Sale Number: {item.saleNumber}</Text>
                   <Text>Date: {item.date}</Text>
+                  <Text>Time: {item.time}</Text>
                   <Text>Payment Method: {item.paymentMethod}</Text>
                   <Text>Total: ${item.total.toFixed(2)}</Text>
                 </View>

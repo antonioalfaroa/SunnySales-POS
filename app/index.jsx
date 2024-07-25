@@ -6,20 +6,24 @@ import { icons } from '../images';
 import CustomButton from '../components/CustomButton';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StripeProvider } from '@stripe/stripe-react-native'; // Import StripeProvider
+
+// Replace with your actual Stripe publishable key
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51PfeXFLhIpYpbdjMHS047zIdDyYFqa9retlkMoWdXnM4tVPNgwOhuqPiTxDmfHZBTije8CVgFT4vK75vcWuLsuaO00BwUodvLA';
 
 export default function App() {
   return (
-    <SafeAreaView styles={styles.container}>
-      <ScrollView contentContainerStyle={{height:"100%"}}>
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={{ height: "100%" }}>
           <View className="w-full justify-center items-center h-full px-4" style={styles.container}>
             <Image
               source={icons.sunny}
               className=""
               style={styles.logo}
-              
             />
             <Text style={styles.title}>
-              Control your sales with {'\n'} 
+              Control your sales with {'\n'}
               SunnySales
             </Text>
             <CustomButton
@@ -28,27 +32,28 @@ export default function App() {
               containerStyles="w-full mt-5"
             />
           </View>
-      </ScrollView>
-      <StatusBar backgroundColor="#161622"
-      style='light'/>
-    </SafeAreaView>
+        </ScrollView>
+        <StatusBar backgroundColor="#161622" style='light' />
+      </SafeAreaView>
+    </StripeProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container:{
-    flex:1,
+  container: {
+    flex: 1,
   },
-  logo:{
-    top: - 50,
+  logo: {
+    top: -50,
     width: 150,
     height: 150,
   },
-  title:{
-    display:'flex',
+  title: {
+    display: 'flex',
     top: -40,
-    textAlign:'center',
-    fontSize:35,
-    fontWeight:'600',
+    textAlign: 'center',
+    fontSize: 35,
+    fontWeight: '500',
+    fontFamily: 'gordita',
   }
-})
+});

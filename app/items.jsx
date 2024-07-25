@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { auth, firestore } from './firebase';
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { useCart } from './CartContext';
@@ -98,6 +98,9 @@ const Items = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
+            <Pressable style={styles.closeButton} onPress={handleCategoryModalClose}>
+              <Text style={styles.closeText}>Close</Text>
+            </Pressable>
             <FlatList
               data={categories}
               keyExtractor={item => item.id}
@@ -179,6 +182,18 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'gray',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+  },
+  closeText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

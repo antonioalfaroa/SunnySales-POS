@@ -1,24 +1,51 @@
-import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native'
+import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native';
 import { Link, Stack, useNavigation } from 'expo-router';
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { StackActions } from '@react-navigation/native';
+import { getFirestore, doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
 
+// Utility functions for validation
+const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validatePassword = (password) => /^(?=.*\d).{8,}$/.test(password);
 
 const SignUp = () => {
-
   const navigation = useNavigation();
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submit = async () => {
+    const { email, password, companyName, address } = form;
+
+    // Validate email and password
+    if (!validateEmail(email)) {
+      Alert.alert('Invalid email', 'Please enter a valid email address.');
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      Alert.alert('Invalid password', 'Password must be at least 8 characters long and contain at least one number.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const auth = getAuth();
-      await createUserWithEmailAndPassword(auth, form.email, form.password);
-      alert('Sign up successful!');
+      const firestore = getFirestore(); // Initialize Firestore
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Save user details to Firestore
+      await setDoc(doc(firestore, `users/${user.uid}`), {
+        companyName,
+        address,
+        email
+      });
+
+      Alert.alert('Sign up successful!');
       navigation.dispatch(StackActions.popToTop());
     } catch (error) {
       Alert.alert('Sign up failed', error.message);
@@ -32,62 +59,63 @@ const SignUp = () => {
     address: '',
     email: '',
     password: ''
-  })
+  });
 
   return (
-    <SafeAreaView className="bg-[#fb923c] h-full">
+    <SafeAreaView style={{backgroundColor: '#fb923c', flex: 1}}>
       <ScrollView>
-        <View className="w-full justify-center min-h-[80vh] px-4 my-6">
-            <Text className="text-sxl text-white mt-10 ">Sign up to SunnySales</Text>
+        <View style={{ width: '100%', justifyContent: 'center', minHeight: '80vh', paddingHorizontal: 16, marginVertical: 24 }}>
+          <Text style={{ fontSize: 24, color: 'white', marginTop: 10 }}>Sign up to SunnySales</Text>
 
-            <FormField
+          <FormField
             title="Company Name"
-            value={form.cName}
-            handleChangeText={(e) => setform({...form, cName:e})}
-            otherStyles="mt-7"
+            value={form.companyName}
+            handleChangeText={(e) => setform({...form, companyName: e})}
+            style={{ marginTop: 28 }}
           />
 
-            <FormField
+          <FormField
             title="Address"
             value={form.address}
-            handleChangeText={(e) => setform({...form, address:e})}
-            otherStyles="mt-7"
+            handleChangeText={(e) => setform({...form, address: e})}
+            style={{ marginTop: 28 }}
           />
 
           <FormField
             title="Email"
             value={form.email}
-            handleChangeText={(e) => setform({...form, email:e})}
-            otherStyles="mt-7"
+            handleChangeText={(e) => setform({...form, email: e})}
+            style={{ marginTop: 28 }}
             keyboardType="email-address"
           />
 
           <FormField
             title="Password"
             value={form.password}
-            handleChangeText={(e) => setform({...form, password:e})}
-            otherStyles="mt-7"
+            handleChangeText={(e) => setform({...form, password: e})}
+            style={{ marginTop: 28 }}
+            secureTextEntry
           />
 
           <CustomButton
             title="Sign Up"
             handlePress={submit}
-            containerStyles="mt-7"
+            style={{ marginTop: 28 }}
             isLoading={isSubmitting}
           />
 
-          <View className="justify-center pt-5 flex-row gap-2">
-            <Text className="text-lg text-gray-100 font-pregular">
+          <View style={{ justifyContent: 'center', paddingTop: 20, flexDirection: 'row', gap: 8 }}>
+            <Text style={{ fontSize: 18, color: 'gray', fontFamily: 'Regular' }}>
               Have an account already?
             </Text>
-            <Link href="(auth)/sign-in" className='text-lg font-psmibold text-yellow'> Log In</Link>
+            <Link href="(auth)/sign-in" style={{ fontSize: 18, fontFamily: 'Bold', color: '#fbbf24' }}> Log In</Link>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default SignUp
+export default SignUp;
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({});

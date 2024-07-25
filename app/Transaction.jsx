@@ -1,54 +1,157 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Button, StyleSheet, Alert, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import { useCart } from './CartContext';
 import { firestore, auth } from './firebase';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
+import { useStripe, CardField } from '@stripe/stripe-react-native';
 
 const Transaction = () => {
   const { cart, clearCart } = useCart();
+  const { confirmPayment } = useStripe();
   const [paymentMethod, setPaymentMethod] = useState(null);
-  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '' });
   const [cashPaid, setCashPaid] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [card, setCard] = useState(null);
+  const [stripeAccountId, setStripeAccountId] = useState('');
   const navigation = useNavigation();
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const currentDate = new Date().toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+  useEffect(() => {
+    const fetchStripeAccountId = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const stripeDocRef = doc(firestore, `users/${user.uid}/stripe/default`);
+          const stripeDoc = await getDoc(stripeDocRef);
+          const stripeData = stripeDoc.data();
+          setStripeAccountId(stripeData?.stripeAccountId || '');
+        }
+      } catch (error) {
+        console.error('Error fetching Stripe account ID:', error);
+      }
+    };
 
-  const handleCompletePayment = async () => {
+    fetchStripeAccountId();
+  }, []);
+
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleCardPayment = async () => {
+    try {
+      if (!stripeAccountId) {
+        Alert.alert('Stripe Account Not Connected', 'Please connect your Stripe account to proceed with the payment.');
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        setErrorMessage('User not authenticated');
+        return;
+      }
+
+      const response = await fetch('https://sunny-sales-backend.vercel.app/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Math.round(total * 100) }), // No stripeAccountId needed here
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const { clientSecret } = await response.json();
+
+      const { error, paymentIntent } = await confirmPayment(clientSecret, {
+        type: 'Card',
+        paymentMethodType: 'Card',
+        paymentMethodData: {
+          card: card,
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+
+      console.log('Payment successful:', paymentIntent);
+
+      const userId = user.uid;
+      const now = new Date();
+      const currentDate = now.toLocaleDateString('en-CA');
+      const currentTime = now.toLocaleTimeString('en-CA');
+
+      const salesQuery = query(collection(firestore, `users/${userId}/sales`), where('date', '==', currentDate));
+      const salesSnapshot = await getDocs(salesQuery);
+      const saleNumber = salesSnapshot.size + 1;
+
+      await addDoc(collection(firestore, `users/${userId}/sales`), {
+        saleNumber,
+        date: currentDate,
+        time: currentTime,
+        items: cart.map(item => ({ name: item.name, price: item.price, quantity: item.quantity })),
+        total,
+        paymentMethod,
+      });
+
+      clearCart();
+      Alert.alert('Payment recorded successfully!');
+      setCard(null);
+      setCashPaid('');
+      setPaymentMethod(null);
+      navigation.navigate('Home');
+    } catch (error) {
+      setErrorMessage('Error completing payment');
+      console.error('Error completing payment: ', error);
+    }
+  };
+
+  const handleCashPayment = async () => {
     try {
       const user = auth.currentUser;
       if (!user) {
         setErrorMessage('User not authenticated');
         return;
       }
-      const userId = user.uid;
 
-      // Fetch the latest sale number for the current date
-      const salesQuery = query(collection(firestore, `users/${userId}/sales`), where('date', '==', currentDate));
+      const now = new Date();
+      const currentDate = now.toLocaleDateString('en-CA');
+      const currentTime = now.toLocaleTimeString('en-CA');
+
+      const salesQuery = query(collection(firestore, `users/${user.uid}/sales`), where('date', '==', currentDate));
       const salesSnapshot = await getDocs(salesQuery);
       const saleNumber = salesSnapshot.size + 1;
 
-      // Create a new sale document
-      await addDoc(collection(firestore, `users/${userId}/sales`), {
+      await addDoc(collection(firestore, `users/${user.uid}/sales`), {
         saleNumber,
         date: currentDate,
+        time: currentTime,
         items: cart.map(item => ({ name: item.name, price: item.price, quantity: item.quantity })),
         total,
         paymentMethod,
-        ...(paymentMethod === 'Cash' ? { cashPaid: parseFloat(cashPaid), change: parseFloat(cashPaid) - total } : {}),
+        cashPaid: parseFloat(cashPaid),
+        change: parseFloat(cashPaid) - total,
       });
 
       clearCart();
       Alert.alert('Payment recorded successfully!');
-      setCardDetails({ number: '', expiry: '', cvv: '' }); // Reset card details
-      setCashPaid(''); // Reset cash paid
-      setPaymentMethod(null); // Reset payment method
-      navigation.navigate('Home'); // Navigate to the Home tab (Items page)
+      setCard(null);
+      setCashPaid('');
+      setPaymentMethod(null);
+      navigation.navigate('Home');
     } catch (error) {
       setErrorMessage('Error completing payment');
       console.error('Error completing payment: ', error);
+    }
+  };
+
+  const handleCompletePayment = () => {
+    if (paymentMethod === 'Card') {
+      handleCardPayment();
+    } else if (paymentMethod === 'Cash') {
+      handleCashPayment();
+    } else {
+      Alert.alert('Error', 'Please select a payment method.');
     }
   };
 
@@ -58,35 +161,19 @@ const Transaction = () => {
 
       {!paymentMethod && (
         <View>
-          <TouchableOpacity onPress={() => setPaymentMethod('Card')} style={styles.paymentButton}>
-            <Text>Pay with Card</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPaymentMethod('Cash')} style={styles.paymentButton}>
-            <Text>Pay with Cash</Text>
-          </TouchableOpacity>
+          <Button title="Pay with Card" onPress={() => setPaymentMethod('Card')} />
+          <Button title="Pay with Cash" onPress={() => setPaymentMethod('Cash')} />
         </View>
       )}
 
       {paymentMethod === 'Card' && (
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Card Number"
-            value={cardDetails.number}
-            onChangeText={(text) => setCardDetails({ ...cardDetails, number: text })}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Expiry Date"
-            value={cardDetails.expiry}
-            onChangeText={(text) => setCardDetails({ ...cardDetails, expiry: text })}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="CVV"
-            value={cardDetails.cvv}
-            onChangeText={(text) => setCardDetails({ ...cardDetails, cvv: text })}
-            secureTextEntry
+          <CardField
+            postalCodeEnabled={false}
+            placeholder={{ number: 'Card Number' }}
+            card={card}
+            onCardChange={(cardDetails) => setCard(cardDetails)}
+            style={styles.cardField}
           />
           <Button title="Complete Payment" onPress={handleCompletePayment} />
         </View>
@@ -116,18 +203,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    marginTop: 20, // Ensure it's within the safe zone
+    marginTop: 20,
   },
   title: {
     fontSize: 24,
     marginBottom: 20,
-  },
-  paymentButton: {
-    padding: 16,
-    marginVertical: 10,
-    backgroundColor: '#ddd',
-    borderRadius: 10,
-    alignItems: 'center',
   },
   form: {
     marginTop: 20,
@@ -143,6 +223,10 @@ const styles = StyleSheet.create({
   error: {
     color: 'red',
     marginTop: 20,
+  },
+  cardField: {
+    height: 50,
+    marginBottom: 20,
   },
 });
 

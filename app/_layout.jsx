@@ -2,8 +2,24 @@ import { StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import { Slot, Stack } from 'expo-router'
 import { CartProvider } from './CartContext';
+import { useFonts } from 'expo-font'
+import { useEffect } from 'react';
 
 const RootLayout = () => {
+  const [ fontsLoaded, fontsError ] = useFonts({
+    'gor': require('../assets/fonts/Gordita-Regular.otf'),
+    'gor-b': require('@/assets/fonts/Gordita-Bold.otf'),
+    'gor-md': require('@/assets/fonts/Gordita-Medium.otf'),
+  });
+
+  useEffect(() => {
+    if (fontsError) throw fontsError;
+  }, [fontsError]);
+
+  if (!fontsLoaded && !fontsError) {
+    return null;
+  }
+
   return (
     <CartProvider>
       <Stack>
@@ -21,6 +37,8 @@ const RootLayout = () => {
         <Stack.Screen name='WeeklySalesScreen' options={{ headerShown: false }}/>
         <Stack.Screen name='SoldItemsReportScreen' options={{ headerShown: false }}/>
         <Stack.Screen name='SoldItemsRangeScreen' options={{ headerShown: false }}/>
+        <Stack.Screen name='EditInformation' options={{ headerShown: false }}/>
+        <Stack.Screen name='ChatBotScreen' options={{ headerShown: false }}/>
       </Stack>
     </CartProvider>
   );

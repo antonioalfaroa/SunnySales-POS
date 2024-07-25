@@ -80,8 +80,56 @@ const SoldItemsRangeScreen = () => {
 
   const generatePDFReport = async () => {
     try {
+      // Prepare PDF content with styled HTML
       const pdfContent = `
         <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: #f4f4f4;
+              }
+              h1 {
+                text-align: center;
+                color: #333;
+              }
+              p {
+                font-size: 16px;
+                color: #555;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+                background-color: #fff;
+                border-radius: 5px;
+                overflow: hidden;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+              }
+              th, td {
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+              }
+              th {
+                background-color: #007BFF;
+                color: #fff;
+              }
+              tr:hover {
+                background-color: #f1f1f1;
+              }
+              @media print {
+                body {
+                  margin: 0;
+                }
+                table {
+                  page-break-inside: auto;
+                }
+              }
+            </style>
+          </head>
           <body>
             <h1>Sold Items Report</h1>
             <p>Date Range: ${startDate.toLocaleDateString('en-CA')} to ${endDate.toLocaleDateString('en-CA')}</p>
@@ -102,26 +150,31 @@ const SoldItemsRangeScreen = () => {
           </body>
         </html>
       `;
-
+  
+      // Generate PDF using expo-print
       const { uri } = await Print.printToFileAsync({ html: pdfContent });
-
+  
+      // Move the file to a writable directory on iOS
       const pdfPath = FileSystem.documentDirectory + 'sold_items_report.pdf';
       await FileSystem.moveAsync({
         from: uri,
         to: pdfPath,
       });
-
+  
+      // Use expo-sharing to share the PDF
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(pdfPath);
       } else {
         console.error('Sharing is not available on this device.');
       }
-
+  
+      // Show alert or confirmation message
       alert('PDF Report Downloaded Successfully!');
     } catch (error) {
       console.error('Error generating PDF report:', error);
     }
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>

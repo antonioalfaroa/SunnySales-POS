@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, SafeAreaView, FlatList, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, SafeAreaView, FlatList } from 'react-native';
 import DatePicker from '@react-native-community/datetimepicker';
 import { firestore, auth } from './firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -36,7 +36,6 @@ const SoldItemsReportScreen = () => {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        // No sales for the selected date
         setSalesData([]);
         setModalVisible(true);
         return;
@@ -45,19 +44,16 @@ const SoldItemsReportScreen = () => {
       // Map to store items and their aggregated sales data
       const itemsMap = new Map();
 
-      // Process each sale document
       querySnapshot.forEach(doc => {
         const saleData = doc.data();
         saleData.items.forEach(item => {
           const { name, quantity, price } = item;
           const totalPrice = quantity * price;
           if (itemsMap.has(name)) {
-            // Update existing item entry
             const existingItem = itemsMap.get(name);
             existingItem.quantitySold += quantity;
             existingItem.totalSold += totalPrice;
           } else {
-            // Add new item entry
             itemsMap.set(name, {
               itemName: name,
               quantitySold: quantity,
@@ -67,7 +63,6 @@ const SoldItemsReportScreen = () => {
         });
       });
 
-      // Convert itemsMap to an array for FlatList rendering
       const salesDataArray = Array.from(itemsMap.values());
       setSalesData(salesDataArray);
       setModalVisible(true);
@@ -82,9 +77,17 @@ const SoldItemsReportScreen = () => {
 
   const generatePDFReport = async () => {
     try {
-      // Prepare PDF content
       const pdfContent = `
         <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              h1 { text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
           <body>
             <h1>Sold Items Report</h1>
             <p>Date: ${selectedDate.toLocaleDateString('en-CA')}</p>
@@ -106,24 +109,20 @@ const SoldItemsReportScreen = () => {
         </html>
       `;
 
-      // Generate PDF using expo-print
       const { uri } = await Print.printToFileAsync({ html: pdfContent });
 
-      // Move the file to a writable directory on iOS
       const pdfPath = FileSystem.documentDirectory + 'sold_items_report.pdf';
       await FileSystem.moveAsync({
         from: uri,
         to: pdfPath,
       });
 
-      // Use expo-sharing to share the PDF
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(pdfPath);
       } else {
         console.error('Sharing is not available on this device.');
       }
 
-      // Show alert or confirmation message
       alert('PDF Report Downloaded Successfully!');
     } catch (error) {
       console.error('Error generating PDF report:', error);
